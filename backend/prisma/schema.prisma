@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           Int           @id @default(autoincrement())
+  nome         String
+  email        String        @unique
+  senhaHash    String
+  tipo         UsuarioTipo   @default(fisico)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  cep          String?
+  cidade       String?
+  cpf          String?       @db.VarChar(14)
+  estado       String?
+  latitude     Float?
+  longitude    Float?
+  rua          String?
+  telefone     String?
+  cnpj         String?       @db.VarChar(18)
+  chatMessages ChatMessage[]
+  inscricoes   Inscricao[]
+  vagas        Vaga[]        @relation("CriadorVagas")
+}
+
+model Vaga {
+  id                Int           @id @default(autoincrement())
+  nome              String
+  descricao         String?
+  local             String?
+  data_hora         DateTime?
+  vagas_disponiveis Int
+  categoria         String?
+  cep               String?
+  cidade            String?
+  estado            String?
+  latitude          Float?
+  longitude         Float?
+  criadorId         Int
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  chatMessages      ChatMessage[]
+  inscricoes        Inscricao[]
+  criador           Usuario       @relation("CriadorVagas", fields: [criadorId], references: [id])
+
+  @@index([criadorId], map: "Vaga_criadorId_fkey")
+}
+
+model Inscricao {
+  id                   Int       @id @default(autoincrement())
+  vagaId               Int
+  voluntarioId         Int
+  createdAt            DateTime  @default(now())
+  presencaConfirmada   Boolean   @default(false)
+  dataConfirmacao      DateTime?
+  horasVoluntariadas   Float?
+  vaga                 Vaga      @relation(fields: [vagaId], references: [id])
+  voluntario           Usuario   @relation(fields: [voluntarioId], references: [id])
+
+  @@index([vagaId], map: "Inscricao_vagaId_fkey")
+  @@index([voluntarioId], map: "Inscricao_voluntarioId_fkey")
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  vagaId    Int?
+  mensagem  String
+  createdAt DateTime @default(now())
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  vaga      Vaga?    @relation(fields: [vagaId], references: [id])
+
+  @@index([usuarioId], map: "ChatMessage_usuarioId_fkey")
+  @@index([vagaId], map: "ChatMessage_vagaId_fkey")
+}
+
+enum UsuarioTipo {
+  fisico
+  juridico
+}
